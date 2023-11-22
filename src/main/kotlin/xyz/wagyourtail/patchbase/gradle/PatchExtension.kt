@@ -2,6 +2,7 @@ package xyz.wagyourtail.patchbase.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
+import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.patchbase.gradle.tasks.ApplySourcePatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateClassPatchTask
@@ -62,7 +63,7 @@ abstract class PatchExtension(val project: Project) {
             }
 
             it.archiveClassifier.set("patch")
-            it.dependsOn("remapJar".withSourceSet(sourceSet))
+            it.dependsOn("remap" + "jar".withSourceSet(sourceSet).capitalized())
         }
     }
 
