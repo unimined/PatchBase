@@ -51,7 +51,7 @@ abstract class PatchExtension(val project: Project) {
 
         project.tasks.register("createClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
             it.group = "patchbase"
-            it.inputFile.set((project.tasks.findByName("remapJar".withSourceSet(sourceSet)) as Jar).outputs.files.singleFile)
+            it.inputFile.set((project.tasks.findByName("remap" + "jar".withSourceSet(sourceSet).capitalized()) as Jar).outputs.files.singleFile)
 
             when (mc.side) {
                 EnvType.CLIENT -> it.classpath.set(project.files(mc.minecraftData.minecraftClientFile))
