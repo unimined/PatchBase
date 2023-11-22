@@ -42,13 +42,32 @@ abstract class AbstractSourceTask : ConventionTask() {
     }
 
     fun diff(aName: String?, a: String, bName: String?, b: String): String {
-        val bLines = b.lines().toList()
-        val patch = DiffUtils.diff(a.lines().toList().map { it.trim() }, bLines.map { it.trim() })
+        val aLines = a.lines().toMutableList()
+        // trim end to posix
+        for (i in aLines.indices.reversed()) {
+            if (aLines[i].isNotBlank()) {
+                break
+            } else {
+                aLines.removeAt(i)
+            }
+        }
+        aLines.add("")
+        val bLines = b.lines().toMutableList()
+        // trim end to posix
+        for (i in bLines.indices.reversed()) {
+            if (bLines[i].isNotBlank()) {
+                break
+            } else {
+                bLines.removeAt(i)
+            }
+        }
+        bLines.add("")
+        val patch = DiffUtils.diff(aLines.map { it.trim() }, bLines.map { it.trim() })
         patch.deltas.forEach {
             it.target.position
             it.target.lines = bLines.subList(it.target.position, it.target.position + it.target.size())
         }
-        val unifiedDiff = UnifiedDiffUtils.generateUnifiedDiff(aName, bName, a.lines().toList(), patch, 3)
+        val unifiedDiff = UnifiedDiffUtils.generateUnifiedDiff(aName, bName, aLines, patch, 3)
         val sb = StringBuilder()
         for (s in unifiedDiff) {
             sb.append(s).append("\n")
