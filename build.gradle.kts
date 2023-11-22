@@ -66,6 +66,12 @@ gradlePlugin {
 
 tasks.jar {
     from(sourceSets.main.get().output, installer.output)
+
+    manifest {
+        attributes(
+            "Implementation-Version" to project.version
+        )
+    }
 }
 
 project.evaluationDependsOnChildren()

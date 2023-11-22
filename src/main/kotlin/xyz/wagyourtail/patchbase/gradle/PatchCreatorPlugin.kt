@@ -17,20 +17,24 @@ import xyz.wagyourtail.unimined.util.withSourceSet
 
 class PatchCreatorPlugin : Plugin<Project> {
 
+    val pluginVersion: String = PatchCreatorPlugin::class.java.`package`.implementationVersion ?: "unknown"
+
+
     override fun apply(target: Project) {
+        target.logger.lifecycle("[PatchbaseCreator] Plugin Version: $pluginVersion")
     }
 
 }
 
 fun MinecraftConfig.patchBaseCreator() {
     if (side == EnvType.COMBINED) {
-        project.logger.warn("Merged may make applying patches more difficult, proceed with caution")
+        project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] Merged may make applying patches more difficult, proceed with caution")
     }
     if (!defaultRemapJar) {
-        project.logger.warn("defaultRemapJar is false, this may cause issues with patching")
+        project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] defaultRemapJar is false, this may cause issues with patching")
     }
     if (mcPatcher !is JarModAgentMinecraftTransformer) {
-        project.logger.warn("mcPatcher is not a JarModAgentMinecraftTransformer, this may cause issues with dev runs")
+        project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] mcPatcher is not a JarModAgentMinecraftTransformer, this may cause issues with dev runs")
     }
 
     project.tasks.register("createSourcePatch".withSourceSet(sourceSet), CreateSourcePatchTask::class.java) {
