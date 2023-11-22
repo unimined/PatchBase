@@ -62,7 +62,7 @@ fun MinecraftConfig.patchBaseCreator() {
         }
     }
 
-    project.tasks.register("createClassPatch", CreateClassPatchTask::class.java) {
+    project.tasks.register("createClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
         it.group = "patchbase"
         it.inputFile.set((project.tasks.findByName("remapJar".withSourceSet(sourceSet)) as Jar).outputs.files.singleFile)
 
