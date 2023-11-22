@@ -1,2 +1,3 @@
-rootProject.name = "ExampleClient"
+rootProject.name = "patchbase"
 
+include("class-diff")
