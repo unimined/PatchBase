@@ -22,6 +22,9 @@ class PatchCreatorPlugin : Plugin<Project> {
 
     override fun apply(target: Project) {
         target.logger.lifecycle("[PatchbaseCreator] Plugin Version: $pluginVersion")
+
+        target.extensions.create("patchbase", PatchExtension::class.java)
+
     }
 
 }
