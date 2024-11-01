@@ -16,7 +16,7 @@ import xyz.wagyourtail.unimined.util.withSourceSet
 abstract class PatchExtension(val project: Project) {
 
     fun patchBaseCreator(sourceSet: SourceSet) {
-        val mc = project.unimined.minecrafts.map[sourceSet]!!
+        val mc = project.unimined.minecrafts[sourceSet]!!
         if (mc.side == EnvType.COMBINED) {
             project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] Merged may make applying patches more difficult, proceed with caution")
         }
@@ -70,5 +70,4 @@ abstract class PatchExtension(val project: Project) {
     fun patchBase(minecraftConfig: MinecraftConfig) {
         minecraftConfig.patchBase()
     }
-
 }

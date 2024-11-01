@@ -40,7 +40,7 @@ dependencies {
 
     runtimeOnly(gradleApi())
 
-    implementation("xyz.wagyourtail.unimined:unimined:1.1.0-SNAPSHOT")
+    implementation("xyz.wagyourtail.unimined:unimined:1.3.9")
     "installerImplementation"("io.github.java-diff-utils:java-diff-utils:4.12")
     "installerImplementation"("io.github.prcraftmc:class-diff:1.0-SNAPSHOT")
     "installerImplementation"("org.jetbrains:annotations:24.0.1")
