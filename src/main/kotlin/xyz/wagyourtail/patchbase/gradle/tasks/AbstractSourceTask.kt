@@ -17,6 +17,9 @@ import kotlin.io.path.isDirectory
 abstract class AbstractSourceTask : ConventionTask() {
 
     @get:Input
+    abstract val diffContextSize: Property<Int>
+
+	@get:Input
     abstract val sources: Property<FileCollection>
 
     fun findSource(path: Path, action: (InputStream?) -> Unit) {
@@ -67,7 +70,7 @@ abstract class AbstractSourceTask : ConventionTask() {
             it.target.position
             it.target.lines = bLines.subList(it.target.position, it.target.position + it.target.size())
         }
-        val unifiedDiff = UnifiedDiffUtils.generateUnifiedDiff(aName, bName, aLines, patch, 3)
+        val unifiedDiff = UnifiedDiffUtils.generateUnifiedDiff(aName, bName, aLines, patch, diffContextSize.get())
         val sb = StringBuilder()
         for (s in unifiedDiff) {
             sb.append(s).append("\n")

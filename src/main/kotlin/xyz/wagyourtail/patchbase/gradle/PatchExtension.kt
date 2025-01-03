@@ -4,6 +4,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
 import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.jvm.tasks.Jar
+import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.patchbase.gradle.tasks.ApplySourcePatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateClassPatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateSourcePatchTask
@@ -12,11 +13,14 @@ import xyz.wagyourtail.unimined.api.minecraft.MinecraftConfig
 import xyz.wagyourtail.unimined.api.unimined
 import xyz.wagyourtail.unimined.internal.minecraft.MinecraftProvider
 import xyz.wagyourtail.unimined.internal.minecraft.patch.jarmod.JarModAgentMinecraftTransformer
+import xyz.wagyourtail.unimined.util.FinalizeOnRead
 import xyz.wagyourtail.unimined.util.withSourceSet
 import kotlin.io.path.nameWithoutExtension
 
 @Suppress("UnstableApiUsage")
 abstract class PatchExtension(val project: Project) {
+	@set:ApiStatus.Experimental
+	var diffContextSize: Int by FinalizeOnRead(3)
 
     fun patchBaseCreator(sourceSet: SourceSet) {
         val mc = project.unimined.minecrafts[sourceSet]!!
@@ -36,6 +40,7 @@ abstract class PatchExtension(val project: Project) {
             it.group = "patchbase"
             it.sourceDir.set(project.file("src/${sourceSet.name}/java"))
             it.outputDir.set(project.file("patches/${sourceSet.name}"))
+			it.diffContextSize.set( diffContextSize )
             val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
             if (!sourceFile.exists()) {
@@ -47,6 +52,7 @@ abstract class PatchExtension(val project: Project) {
             it.group = "patchbase"
             it.patchDir.set(project.file("patches/${sourceSet.name}"))
             it.outputDir.set(project.file("src/${sourceSet.name}/java"))
+			it.diffContextSize.set( diffContextSize )
             val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
             if (!sourceFile.exists()) {

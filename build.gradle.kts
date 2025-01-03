@@ -104,6 +104,11 @@ publishing {
                 password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
             }
         }
+        maven {
+			name = "Repsy"
+			credentials(PasswordCredentials::class)
+			url = uri("https://repsy.io/mvn/enderzombi102/mc")
+		}
     }
     publications {
         create<MavenPublication>("maven") {
