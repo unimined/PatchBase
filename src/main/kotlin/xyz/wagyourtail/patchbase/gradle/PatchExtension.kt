@@ -10,9 +10,12 @@ import xyz.wagyourtail.patchbase.gradle.tasks.CreateSourcePatchTask
 import xyz.wagyourtail.unimined.api.minecraft.EnvType
 import xyz.wagyourtail.unimined.api.minecraft.MinecraftConfig
 import xyz.wagyourtail.unimined.api.unimined
+import xyz.wagyourtail.unimined.internal.minecraft.MinecraftProvider
 import xyz.wagyourtail.unimined.internal.minecraft.patch.jarmod.JarModAgentMinecraftTransformer
 import xyz.wagyourtail.unimined.util.withSourceSet
+import kotlin.io.path.nameWithoutExtension
 
+@Suppress("UnstableApiUsage")
 abstract class PatchExtension(val project: Project) {
 
     fun patchBaseCreator(sourceSet: SourceSet) {
@@ -27,11 +30,13 @@ abstract class PatchExtension(val project: Project) {
             project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] mcPatcher is not a JarModAgentMinecraftTransformer, this may cause issues with dev runs")
         }
 
+		val mcp = mc as MinecraftProvider // needed for access to `getMcDevFile()`
+
         project.tasks.register("createSourcePatch".withSourceSet(sourceSet), CreateSourcePatchTask::class.java) {
             it.group = "patchbase"
             it.sourceDir.set(project.file("src/${sourceSet.name}/java"))
             it.outputDir.set(project.file("patches/${sourceSet.name}"))
-            val sourceFile = mc.minecraftFileDev.resolveSibling(mc.minecraftFileDev.nameWithoutExtension + "-sources.jar")
+            val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
             if (!sourceFile.exists()) {
                 it.dependsOn("genSources")
@@ -42,7 +47,7 @@ abstract class PatchExtension(val project: Project) {
             it.group = "patchbase"
             it.patchDir.set(project.file("patches/${sourceSet.name}"))
             it.outputDir.set(project.file("src/${sourceSet.name}/java"))
-            val sourceFile = mc.minecraftFileDev.resolveSibling(mc.minecraftFileDev.nameWithoutExtension + "-sources.jar")
+            val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
             if (!sourceFile.exists()) {
                 it.dependsOn("genSources".withSourceSet(sourceSet))
@@ -56,9 +61,7 @@ abstract class PatchExtension(val project: Project) {
             when (mc.side) {
                 EnvType.CLIENT -> it.classpath.set(project.files(mc.minecraftData.minecraftClientFile))
                 EnvType.SERVER -> it.classpath.set(project.files(mc.minecraftData.minecraftServerFile))
-                EnvType.COMBINED -> {
-                    it.classpath.set(project.files(mc.mergedOfficialMinecraftFile))
-                }
+                EnvType.COMBINED -> it.classpath.set(project.files(mc.mergedOfficialMinecraftFile))
                 else -> throw IllegalStateException("Unknown side: ${mc.side}")
             }
 
