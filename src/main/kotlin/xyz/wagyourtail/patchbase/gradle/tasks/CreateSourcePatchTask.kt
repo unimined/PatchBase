@@ -25,12 +25,16 @@ abstract class CreateSourcePatchTask : AbstractSourceTask() {
                 throw IllegalArgumentException("sourceDir must only contain java files")
             }
             val relative = path.relativeTo(source)
-            val targetParent = output.resolve(relative.parent)
-            targetParent.createDirectories()
+            val targetParent = relative.parent?.let {
+                output.resolve(it).createDirectories()
+            } ?: output
             findSource(relative) { original ->
                 if (original != null) {
                     val target = targetParent.resolve(relative.nameWithoutExtension + ".${relative.extension}.patch")
-                    target.writeText(diff(relative.name, original.readBytes().decodeToString(), relative.name, path.readText()))
+                    val diff = diff(relative.name, original.readBytes().decodeToString(), relative.name, path.readText())
+                    if (!diff.trim().isEmpty()) {
+                        target.writeText(diff)
+                    }
                 } else {
                     val target = targetParent.resolve(relative.name)
                     path.copyTo(target, overwrite = true)
