@@ -21,8 +21,10 @@ import kotlin.io.path.nameWithoutExtension
 abstract class PatchExtension(val project: Project) {
 	@set:ApiStatus.Experimental
 	var diffContextSize: Int by FinalizeOnRead(3)
+	@set:ApiStatus.Experimental
+	var trimWhitespace: Boolean by FinalizeOnRead(true)
 
-    fun patchBaseCreator(sourceSet: SourceSet) {
+    fun patchBaseCreator(sourceSet: SourceSet, devJar: Boolean = false) {
         val mc = project.unimined.minecrafts[sourceSet]!!
         if (mc.side == EnvType.COMBINED) {
             project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] Merged may make applying patches more difficult, proceed with caution")
@@ -40,6 +42,7 @@ abstract class PatchExtension(val project: Project) {
             it.group = "patchbase"
             it.sourceDir.set(project.file("src/${sourceSet.name}/java"))
             it.outputDir.set(project.file("patches/${sourceSet.name}"))
+			it.trimWhitespace.set( trimWhitespace )
 			it.diffContextSize.set( diffContextSize )
             val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
@@ -52,6 +55,7 @@ abstract class PatchExtension(val project: Project) {
             it.group = "patchbase"
             it.patchDir.set(project.file("patches/${sourceSet.name}"))
             it.outputDir.set(project.file("src/${sourceSet.name}/java"))
+			it.trimWhitespace.set( trimWhitespace )
 			it.diffContextSize.set( diffContextSize )
             val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
@@ -74,6 +78,21 @@ abstract class PatchExtension(val project: Project) {
             it.archiveClassifier.set("patch")
             it.dependsOn("remap" + "jar".withSourceSet(sourceSet).capitalized())
         }
+
+		if ( devJar ) {
+			project.tasks.register("createDevClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
+				it.group = "patchbase"
+				it.inputFile.set(
+					(project.tasks.findByName(
+						"jar".withSourceSet(sourceSet).capitalized()
+					) as Jar).outputs.files.singleFile
+				)
+
+				it.classpath.set( project.files( mc.getMcDevFile() ) )
+				it.archiveClassifier.set("patch-dev")
+				it.dependsOn("jar".withSourceSet(sourceSet).capitalized())
+			}
+		}
     }
 
     fun patchBase(minecraftConfig: MinecraftConfig) {

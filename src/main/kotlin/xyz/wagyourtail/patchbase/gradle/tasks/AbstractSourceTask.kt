@@ -2,7 +2,6 @@ package xyz.wagyourtail.patchbase.gradle.tasks
 
 import com.github.difflib.DiffUtils
 import com.github.difflib.UnifiedDiffUtils
-import com.github.difflib.patch.Patch
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.provider.Property
@@ -18,6 +17,9 @@ abstract class AbstractSourceTask : ConventionTask() {
 
     @get:Input
     abstract val diffContextSize: Property<Int>
+
+    @get:Input
+    abstract val trimWhitespace: Property<Boolean>
 
 	@get:Input
     abstract val sources: Property<FileCollection>
@@ -45,7 +47,7 @@ abstract class AbstractSourceTask : ConventionTask() {
     }
 
     fun diff(aName: String?, a: String, bName: String?, b: String): String {
-        val aLines = a.lines().toMutableList()
+        var aLines = a.lines().toMutableList()
         // trim end to posix
         for (i in aLines.indices.reversed()) {
             if (aLines[i].isNotBlank()) {
@@ -55,7 +57,7 @@ abstract class AbstractSourceTask : ConventionTask() {
             }
         }
         aLines.add("")
-        val bLines = b.lines().toMutableList()
+        var bLines = b.lines().toMutableList()
         // trim end to posix
         for (i in bLines.indices.reversed()) {
             if (bLines[i].isNotBlank()) {
@@ -65,7 +67,12 @@ abstract class AbstractSourceTask : ConventionTask() {
             }
         }
         bLines.add("")
-        val patch = DiffUtils.diff(aLines.map { it.trim() }, bLines.map { it.trim() })
+		if (trimWhitespace.get()) {
+			aLines = aLines.map(String::trim).toMutableList()
+			bLines = bLines.map(String::trim).toMutableList()
+		}
+
+		val patch = DiffUtils.diff(aLines, bLines)
         patch.deltas.forEach {
             it.target.position
             it.target.lines = bLines.subList(it.target.position, it.target.position + it.target.size())
