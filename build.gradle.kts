@@ -42,8 +42,11 @@ dependencies {
 
     implementation("xyz.wagyourtail.unimined:unimined:1.3.9")
     "installerImplementation"("io.github.java-diff-utils:java-diff-utils:4.12")
-    "installerImplementation"("io.github.prcraftmc:class-diff:1.0-SNAPSHOT")
+    "installerImplementation"("net.neoforged.installertools:binarypatcher:3.0.2")
+    "installerImplementation"("org.ow2.asm:asm:9.7")
+    "installerImplementation"("org.ow2.asm:asm-tree:9.7")
     "installerImplementation"("org.jetbrains:annotations:24.0.1")
+    "installerImplementation"("com.nothome:javaxdelta:2.0.1")
 }
 
 gradlePlugin {
