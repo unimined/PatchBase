@@ -32,7 +32,8 @@ abstract class ApplySourcePatchTask : AbstractSourceTask() {
             } else {
                 findSource(relative.resolveSibling(relative.nameWithoutExtension)) { original ->
                     if (original != null) {
-                        targetParent.resolve(relative.nameWithoutExtension).writeText(applyDiff(original.readBytes().decodeToString(), path.readText()))
+                        targetParent.resolve(relative.nameWithoutExtension)
+                            .writeText(applyDiff(original.readBytes().decodeToString(), path.readText()))
                     } else {
                         throw IllegalStateException("Cannot apply patch to non-existent file: $relative")
                     }

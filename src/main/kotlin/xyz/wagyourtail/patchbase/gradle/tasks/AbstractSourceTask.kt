@@ -14,19 +14,19 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.isDirectory
 
 abstract class AbstractSourceTask : ConventionTask() {
-	/**
-	 * Controls how much context (surrounding lines) are provided in the patch files.
-	 */
-	@get:Input
+    /**
+     * Controls how much context (surrounding lines) are provided in the patch files.
+     */
+    @get:Input
     abstract val diffContextSize: Property<Int>
 
-	/**
-	 * Trims leading whitespace in the patch files.
-	 */
-	@get:Input
+    /**
+     * Trims leading whitespace in the patch files.
+     */
+    @get:Input
     abstract val trimWhitespace: Property<Boolean>
 
-	@get:Input
+    @get:Input
     abstract val sources: Property<FileCollection>
 
     fun findSource(path: Path, action: (InputStream?) -> Unit) {
@@ -72,12 +72,12 @@ abstract class AbstractSourceTask : ConventionTask() {
             }
         }
         bLines.add("")
-		if (trimWhitespace.get()) {
-			aLines = aLines.map(String::trim).toMutableList()
-			bLines = bLines.map(String::trim).toMutableList()
-		}
+        if (trimWhitespace.get()) {
+            aLines = aLines.map(String::trim).toMutableList()
+            bLines = bLines.map(String::trim).toMutableList()
+        }
 
-		val patch = DiffUtils.diff(aLines, bLines)
+        val patch = DiffUtils.diff(aLines, bLines)
         patch.deltas.forEach {
             it.target.position
             it.target.lines = bLines.subList(it.target.position, it.target.position + it.target.size())

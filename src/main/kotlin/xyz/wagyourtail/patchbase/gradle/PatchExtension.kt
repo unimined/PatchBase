@@ -19,23 +19,23 @@ import kotlin.io.path.nameWithoutExtension
 
 @Suppress("UnstableApiUsage")
 abstract class PatchExtension(val project: Project) {
-	/**
-	 * The default value for [[CreateSourcePatchTask.diffContextSize]
-	 */
-	@set:ApiStatus.Experimental
-	var diffContextSize: Int by FinalizeOnRead(3)
+    /**
+     * The default value for [[CreateSourcePatchTask.diffContextSize]
+     */
+    @set:ApiStatus.Experimental
+    var diffContextSize: Int by FinalizeOnRead(3)
 
-	/**
-	 * The default value for [CreateSourcePatchTask.trimWhitespace]
-	 */
-	@set:ApiStatus.Experimental
-	var trimWhitespace: Boolean by FinalizeOnRead(true)
+    /**
+     * The default value for [CreateSourcePatchTask.trimWhitespace]
+     */
+    @set:ApiStatus.Experimental
+    var trimWhitespace: Boolean by FinalizeOnRead(true)
 
-	/**
-	 * The default value for [CreateClassPatchTask.minimizePatch]
-	 */
-	@set:ApiStatus.Experimental
-	var minimizePatch: Boolean by FinalizeOnRead(true)
+    /**
+     * The default value for [CreateClassPatchTask.minimizePatch]
+     */
+    @set:ApiStatus.Experimental
+    var minimizePatch: Boolean by FinalizeOnRead(true)
 
     fun patchBaseCreator(sourceSet: SourceSet, devJar: Boolean = false) {
         val mc = project.unimined.minecrafts[sourceSet]!!
@@ -49,15 +49,16 @@ abstract class PatchExtension(val project: Project) {
             project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] mcPatcher is not a JarModAgentMinecraftTransformer, this may cause issues with dev runs")
         }
 
-		val mcp = mc as MinecraftProvider // needed for access to `getMcDevFile()`
+        val mcp = mc as MinecraftProvider // needed for access to `getMcDevFile()`
 
         project.tasks.register("createSourcePatch".withSourceSet(sourceSet), CreateSourcePatchTask::class.java) {
             it.group = "patchbase"
             it.sourceDir.set(project.file("src/${sourceSet.name}/java"))
             it.outputDir.set(project.file("patches/${sourceSet.name}"))
-			it.trimWhitespace.set( trimWhitespace )
-			it.diffContextSize.set( diffContextSize )
-            val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
+            it.trimWhitespace.set(trimWhitespace)
+            it.diffContextSize.set(diffContextSize)
+            val sourceFile =
+                mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
             if (!sourceFile.exists()) {
                 it.dependsOn("genSources")
@@ -68,9 +69,10 @@ abstract class PatchExtension(val project: Project) {
             it.group = "patchbase"
             it.patchDir.set(project.file("patches/${sourceSet.name}"))
             it.outputDir.set(project.file("src/${sourceSet.name}/java"))
-			it.trimWhitespace.set( trimWhitespace )
-			it.diffContextSize.set( diffContextSize )
-            val sourceFile = mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
+            it.trimWhitespace.set(trimWhitespace)
+            it.diffContextSize.set(diffContextSize)
+            val sourceFile =
+                mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
             it.sources.set(project.files(sourceFile))
             if (!sourceFile.exists()) {
                 it.dependsOn("genSources".withSourceSet(sourceSet))
@@ -79,8 +81,12 @@ abstract class PatchExtension(val project: Project) {
 
         project.tasks.register("createClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
             it.group = "patchbase"
-            it.inputFile.set((project.tasks.findByName("remap" + "jar".withSourceSet(sourceSet).capitalized()) as Jar).outputs.files.singleFile)
-			it.minimizePatch.set( minimizePatch )
+            it.inputFile.set(
+                (project.tasks.findByName(
+                    "remap" + "jar".withSourceSet(sourceSet).capitalized()
+                ) as Jar).outputs.files.singleFile
+            )
+            it.minimizePatch.set(minimizePatch)
 
             when (mc.side) {
                 EnvType.CLIENT -> it.classpath.set(project.files(mc.minecraftData.minecraftClientFile))
@@ -93,20 +99,20 @@ abstract class PatchExtension(val project: Project) {
             it.dependsOn("remap" + "jar".withSourceSet(sourceSet).capitalized())
         }
 
-		if ( devJar ) {
-			project.tasks.register("createDevClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
-				it.group = "patchbase"
-				it.inputFile.set(
-					(project.tasks.findByName(
-						"jar".withSourceSet(sourceSet).capitalized()
-					) as Jar).outputs.files.singleFile
-				)
+        if (devJar) {
+            project.tasks.register("createDevClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
+                it.group = "patchbase"
+                it.inputFile.set(
+                    (project.tasks.findByName(
+                        "jar".withSourceSet(sourceSet).capitalized()
+                    ) as Jar).outputs.files.singleFile
+                )
 
-				it.classpath.set( project.files( mc.getMcDevFile() ) )
-				it.archiveClassifier.set("patch-dev")
-				it.dependsOn("jar".withSourceSet(sourceSet).capitalized())
-			}
-		}
+                it.classpath.set(project.files(mc.getMcDevFile()))
+                it.archiveClassifier.set("patch-dev")
+                it.dependsOn("jar".withSourceSet(sourceSet).capitalized())
+            }
+        }
     }
 
     fun patchBase(minecraftConfig: MinecraftConfig) {
