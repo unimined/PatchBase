@@ -16,14 +16,19 @@ import java.io.InputStream
 import kotlin.io.path.*
 
 abstract class CreateClassPatchTask : Jar() {
+	/**
+	 * Shrinks the created `.class` patches by remapping constant pool indices.
+	 */
+	@get:Input
+	abstract val minimizePatch: Property<Boolean>
 
-    @get:InputFile
+	@get:InputFile
     abstract val inputFile: RegularFileProperty
 
     @get:Input
     abstract val classpath: Property<FileCollection>
 
-    @OptIn(ExperimentalPathApi::class)
+	@OptIn(ExperimentalPathApi::class)
     @TaskAction
     fun run() {
         val tempDir = temporaryDir.resolve("diffs").toPath()
@@ -56,7 +61,7 @@ abstract class CreateClassPatchTask : Jar() {
     fun makePatch(a: InputStream, b: InputStream, name: String): ByteArray {
         val ra = ClassWriter(ClassReader(a), ClassReader.SKIP_DEBUG).toByteArray()
         val rb = ClassWriter(ClassReader(b), ClassReader.SKIP_DEBUG).toByteArray()
-		val x = Patch.from(name, "", ra, rb, false)
+		val x = Patch.from(name, "", ra, rb, minimizePatch.get())
         return x.toBytes()
     }
 

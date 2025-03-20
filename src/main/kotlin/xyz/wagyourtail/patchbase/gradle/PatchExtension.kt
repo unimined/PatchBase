@@ -19,10 +19,23 @@ import kotlin.io.path.nameWithoutExtension
 
 @Suppress("UnstableApiUsage")
 abstract class PatchExtension(val project: Project) {
+	/**
+	 * The default value for [[CreateSourcePatchTask.diffContextSize]
+	 */
 	@set:ApiStatus.Experimental
 	var diffContextSize: Int by FinalizeOnRead(3)
+
+	/**
+	 * The default value for [CreateSourcePatchTask.trimWhitespace]
+	 */
 	@set:ApiStatus.Experimental
 	var trimWhitespace: Boolean by FinalizeOnRead(true)
+
+	/**
+	 * The default value for [CreateClassPatchTask.minimizePatch]
+	 */
+	@set:ApiStatus.Experimental
+	var minimizePatch: Boolean by FinalizeOnRead(true)
 
     fun patchBaseCreator(sourceSet: SourceSet, devJar: Boolean = false) {
         val mc = project.unimined.minecrafts[sourceSet]!!
@@ -67,6 +80,7 @@ abstract class PatchExtension(val project: Project) {
         project.tasks.register("createClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
             it.group = "patchbase"
             it.inputFile.set((project.tasks.findByName("remap" + "jar".withSourceSet(sourceSet).capitalized()) as Jar).outputs.files.singleFile)
+			it.minimizePatch.set( minimizePatch )
 
             when (mc.side) {
                 EnvType.CLIENT -> it.classpath.set(project.files(mc.minecraftData.minecraftClientFile))

@@ -14,11 +14,16 @@ import kotlin.io.path.inputStream
 import kotlin.io.path.isDirectory
 
 abstract class AbstractSourceTask : ConventionTask() {
-
-    @get:Input
+	/**
+	 * Controls how much context (surrounding lines) are provided in the patch files.
+	 */
+	@get:Input
     abstract val diffContextSize: Property<Int>
 
-    @get:Input
+	/**
+	 * Trims leading whitespace in the patch files.
+	 */
+	@get:Input
     abstract val trimWhitespace: Property<Boolean>
 
 	@get:Input
