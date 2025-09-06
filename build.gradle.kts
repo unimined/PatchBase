@@ -1,19 +1,19 @@
 import java.net.URI
 
 plugins {
-    kotlin("jvm") version "1.8.21"
+    kotlin("jvm") version "1.9.23"
     `java-gradle-plugin`
     `maven-publish`
 }
 
-version = if (project.hasProperty("version_snapshot")) project.properties["version"] as String + "-SNAPSHOT" else project.properties["version"] as String
-group = project.properties["maven_group"] as String
+version = "${project.properties["version"]}" + if (project.hasProperty("version_snapshot")) "-SNAPSHOT" else ""
+group = "${project.properties["maven_group"]}"
 
-base {
-    archivesName.set(project.properties["archives_base_name"] as String)
-}
+base.archivesName = "${project.properties["archives_base_name"]}"
 
-val installer by sourceSets.creating
+val main: SourceSet by sourceSets.getting
+val installer: SourceSet by sourceSets.creating
+val installerImplementation: Configuration by configurations.getting
 
 sourceSets {
     main {
@@ -25,13 +25,12 @@ sourceSets {
 repositories {
     maven("https://maven.wagyourtail.xyz/releases")
     maven("https://maven.wagyourtail.xyz/snapshots")
-    maven("https://maven.jemnetworks.com/snapshots")
     mavenCentral()
 }
 
 configurations {
     implementation {
-        extendsFrom(configurations.named("installerImplementation").get())
+        extendsFrom(installerImplementation)
     }
 }
 
@@ -40,13 +39,13 @@ dependencies {
 
     runtimeOnly(gradleApi())
 
-    implementation("xyz.wagyourtail.unimined:unimined:1.3.9")
-    "installerImplementation"("io.github.java-diff-utils:java-diff-utils:4.12")
-    "installerImplementation"("net.neoforged.installertools:binarypatcher:3.0.2")
-    "installerImplementation"("org.ow2.asm:asm:9.7")
-    "installerImplementation"("org.ow2.asm:asm-tree:9.7")
-    "installerImplementation"("org.jetbrains:annotations:24.0.1")
-    "installerImplementation"("com.nothome:javaxdelta:2.0.1")
+    implementation("xyz.wagyourtail.unimined:unimined:1.3.15")
+    installerImplementation("io.github.java-diff-utils:java-diff-utils:4.16")
+    installerImplementation("net.neoforged.installertools:binarypatcher:3.0.13")
+    installerImplementation("org.ow2.asm:asm:9.8")
+    installerImplementation("org.ow2.asm:asm-tree:9.8")
+    installerImplementation("org.jetbrains:annotations:26.0.2-1")
+    installerImplementation("com.nothome:javaxdelta:2.0.1")
 }
 
 gradlePlugin {
@@ -68,7 +67,7 @@ gradlePlugin {
 }
 
 tasks.jar {
-    from(sourceSets.main.get().output, installer.output)
+    from(main.output, installer.output)
 
     manifest {
         attributes(
