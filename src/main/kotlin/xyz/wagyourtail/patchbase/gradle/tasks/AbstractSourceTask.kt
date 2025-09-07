@@ -44,7 +44,7 @@ abstract class AbstractSourceTask : ConventionTask() {
                     sourcePath.readZipInputStreamFor(path.toString(), true) {
                         action(it)
                     }
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     action(null)
                 }
             }

@@ -9,7 +9,6 @@ import xyz.wagyourtail.unimined.internal.minecraft.MinecraftProvider
 import xyz.wagyourtail.unimined.internal.minecraft.patch.jarmod.JarModAgentMinecraftTransformer
 import xyz.wagyourtail.unimined.util.withSourceSet
 
-
 fun MinecraftConfig.patchBase(action: PatchBaseMinecraftTransformer.() -> Unit = {}) {
     customPatcher(PatchBaseMinecraftTransformer(this.project, this as MinecraftProvider), action)
 }
@@ -36,5 +35,4 @@ class PatchBaseMinecraftTransformer(project: Project, provider: MinecraftProvide
 
         return super.transform(patchedMC)
     }
-
 }

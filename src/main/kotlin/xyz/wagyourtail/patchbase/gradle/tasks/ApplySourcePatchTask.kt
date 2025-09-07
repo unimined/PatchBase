@@ -7,7 +7,6 @@ import java.io.File
 import kotlin.io.path.*
 
 abstract class ApplySourcePatchTask : AbstractSourceTask() {
-
     @get:Input
     abstract val patchDir: Property<File>
 

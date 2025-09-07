@@ -80,11 +80,10 @@ abstract class CreateClassPatchTask : Jar() {
                     sourcePath.readZipInputStreamFor(name, true) {
                         action(it)
                     }
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     action(null)
                 }
             }
         }
     }
-
 }

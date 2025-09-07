@@ -7,7 +7,6 @@ import java.io.File
 import kotlin.io.path.*
 
 abstract class CreateSourcePatchTask : AbstractSourceTask() {
-
     @get:Input
     abstract val sourceDir: Property<File>
 
@@ -22,7 +21,7 @@ abstract class CreateSourcePatchTask : AbstractSourceTask() {
         val source = sourceDir.get().toPath()
         for (path in source.walk()) {
             if (path.extension != "java") {
-                throw IllegalArgumentException("sourceDir must only contain java files")
+                project.logger.warn("Not creating a patch for $path")
             }
             val relative = path.relativeTo(source)
             val targetParent = relative.parent?.let {
@@ -42,5 +41,4 @@ abstract class CreateSourcePatchTask : AbstractSourceTask() {
             }
         }
     }
-
 }
