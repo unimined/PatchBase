@@ -1,3 +1,3 @@
 rootProject.name = "patchbase"
 
-include("class-diff")
+include(":class-diff")
