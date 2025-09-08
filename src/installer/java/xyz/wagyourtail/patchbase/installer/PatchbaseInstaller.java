@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.*;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -65,7 +67,7 @@ public class PatchbaseInstaller {
 
     public static <T> T readZipInputStreamFor(Path path, String entry, boolean throwIfMissing, Function<InputStream, T> action) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(path))) {
-            var zipEntry = zis.getNextEntry();
+            ZipEntry zipEntry = zis.getNextEntry();
             while (zipEntry != null) {
                 if (zipEntry.isDirectory()) {
                     zipEntry = zis.getNextEntry();
@@ -85,7 +87,7 @@ public class PatchbaseInstaller {
 
     public static void forEachInZip(Path path, BiConsumer<String, InputStream> action) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(path))) {
-            var entry = zis.getNextEntry();
+            ZipEntry entry = zis.getNextEntry();
             while (entry != null) {
                 if (entry.isDirectory()) {
                     entry = zis.getNextEntry();
@@ -98,7 +100,7 @@ public class PatchbaseInstaller {
     }
 
     public static FileSystem openZipFileSystem(Path path) throws IOException {
-        return openZipFileSystem(path, Map.of());
+        return openZipFileSystem(path, Collections.emptyMap());
     }
 
     public static FileSystem openZipFileSystem(Path path, Map<String, Object> args) throws IOException {
