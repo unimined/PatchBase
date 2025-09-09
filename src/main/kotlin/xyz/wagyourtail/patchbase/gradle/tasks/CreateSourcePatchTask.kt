@@ -20,15 +20,13 @@ abstract class CreateSourcePatchTask : AbstractSourceTask() {
 
         val source = sourceDir.get().toPath()
         for (path in source.walk()) {
-            if (path.extension != "java") {
-                project.logger.warn("Not creating a patch for $path")
-            }
             val relative = path.relativeTo(source)
             val targetParent = relative.parent?.let {
                 output.resolve(it).createDirectories()
             } ?: output
             findSource(relative) { original ->
                 if (original != null) {
+                    project.logger.info("Creating a patch for $path")
                     val target = targetParent.resolve(relative.nameWithoutExtension + ".${relative.extension}.patch")
                     val diff = diff(relative.name, original.readBytes().decodeToString(), relative.name, path.readText())
                     if (!diff.trim().isEmpty()) {
@@ -36,6 +34,7 @@ abstract class CreateSourcePatchTask : AbstractSourceTask() {
                     }
                 } else {
                     val target = targetParent.resolve(relative.name)
+                    project.logger.info("Copying $path to $target")
                     path.copyTo(target, overwrite = true)
                 }
             }

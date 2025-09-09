@@ -29,9 +29,15 @@ public class PatchbaseInstaller {
         Files.copy(baseJar, outputJar, StandardCopyOption.REPLACE_EXISTING);
         try (FileSystem fs = openZipFileSystem(outputJar)) {
             forEachInZip(patchJar, (entry, is) -> {
-                if (entry.endsWith(".binpatch")) {
-                    try {
-                        readZipInputStreamFor(baseJar, entry.substring(0, entry.length() - 6), true, originalStream -> {
+                String target = entry.substring(0, entry.length() - 6);
+                try {
+                    if (entry.endsWith(".deleted") || (entry.endsWith(".binpatch") && is.available() == 0)) {
+                        System.out.println("Deleting " + target);
+                        Path fileToDelete = fs.getPath(target);
+                        Files.deleteIfExists(fileToDelete);
+                    } else if (entry.endsWith(".binpatch")) {
+                        readZipInputStreamFor(baseJar, target, true, originalStream -> {
+                            System.out.println("Patching " + target);
                             try {
                                 byte[] original = new ClassWriter(new ClassReader(originalStream), ClassReader.SKIP_DEBUG).toByteArray();
                                 byte[] result = patch(original, Patch.from(is));
@@ -49,17 +55,13 @@ public class PatchbaseInstaller {
                             }
                             return null;
                         });
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    try {
+                    } else {
                         Path p = fs.getPath(entry);
                         if (p.getParent() != null) Files.createDirectories(p.getParent());
                         Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }
