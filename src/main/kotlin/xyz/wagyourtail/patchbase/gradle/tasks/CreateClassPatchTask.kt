@@ -13,9 +13,14 @@ import org.objectweb.asm.ClassWriter
 import xyz.wagyourtail.unimined.util.forEachInZip
 import xyz.wagyourtail.unimined.util.readZipInputStreamFor
 import java.io.InputStream
+import java.nio.file.Path
 import kotlin.io.path.*
 
 abstract class CreateClassPatchTask : Jar() {
+    companion object {
+        val EMPTY_DATA: ByteArray = ByteArray(0)
+    }
+
     /**
      * Shrinks the created `.class` patches by remapping constant pool indices.
      */
@@ -34,24 +39,32 @@ abstract class CreateClassPatchTask : Jar() {
         val tempDir = temporaryDir.resolve("diffs").toPath()
         tempDir.deleteRecursively()
 
-        inputFile.get().asFile.toPath().forEachInZip { name, stream ->
-            if (name.endsWith(".class")) {
+        inputFile.get().asFile.toPath().forEachInZip { name, input ->
+            fun create(s: String, bytes: ByteArray? = null): Path = tempDir.resolve(s).apply {
+                parent.createDirectories()
+                outputStream().use { output ->
+                    if (bytes != null) bytes.let { output.write(it) }
+                    else input.copyTo(output)
+                }
+            }
+
+            if (name.endsWith(".deleted")) {
+                val target = name.substringBefore(".deleted")
+                findClass(target) { original ->
+                    if (original != null) project.logger.info("$target will be deleted.")
+                    else project.logger.warn("$target does not exist in target.")
+
+                    // Intentionally write empty data, installer will treat this as a deleted file.
+                    create("$name.deleted", EMPTY_DATA)
+                }
+            } else if (name.endsWith(".class")) {
                 // find in classpath
                 findClass(name) { original ->
-                    if (original != null) {
-                        val target = tempDir.resolve("$name.binpatch")
-                        target.parent.createDirectories()
-                        target.writeBytes(makePatch(original, stream, name))
-                    } else {
-                        val target = tempDir.resolve(name)
-                        target.parent.createDirectories()
-                        target.outputStream().use { stream.copyTo(it) }
-                    }
+                    if (original != null) create("$name.binpatch", makePatch(original, input, name))
+                    else create(name)
                 }
             } else {
-                val target = tempDir.resolve(name)
-                target.parent.createDirectories()
-                target.outputStream().use { stream.copyTo(it) }
+                create(name)
             }
         }
         from(tempDir)
@@ -80,11 +93,10 @@ abstract class CreateClassPatchTask : Jar() {
                     sourcePath.readZipInputStreamFor(name, true) {
                         action(it)
                     }
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     action(null)
                 }
             }
         }
     }
-
 }

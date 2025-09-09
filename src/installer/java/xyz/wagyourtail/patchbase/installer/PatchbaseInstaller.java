@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.*;
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
@@ -27,9 +29,15 @@ public class PatchbaseInstaller {
         Files.copy(baseJar, outputJar, StandardCopyOption.REPLACE_EXISTING);
         try (FileSystem fs = openZipFileSystem(outputJar)) {
             forEachInZip(patchJar, (entry, is) -> {
-                if (entry.endsWith(".binpatch")) {
-                    try {
-                        readZipInputStreamFor(baseJar, entry.substring(0, entry.length() - 6), true, originalStream -> {
+                String target = entry.substring(0, entry.length() - 6);
+                try {
+                    if (entry.endsWith(".deleted") || (entry.endsWith(".binpatch") && is.available() == 0)) {
+                        System.out.println("Deleting " + target);
+                        Path fileToDelete = fs.getPath(target);
+                        Files.deleteIfExists(fileToDelete);
+                    } else if (entry.endsWith(".binpatch")) {
+                        readZipInputStreamFor(baseJar, target, true, originalStream -> {
+                            System.out.println("Patching " + target);
                             try {
                                 byte[] original = new ClassWriter(new ClassReader(originalStream), ClassReader.SKIP_DEBUG).toByteArray();
                                 byte[] result = patch(original, Patch.from(is));
@@ -47,17 +55,13 @@ public class PatchbaseInstaller {
                             }
                             return null;
                         });
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
-                    try {
+                    } else {
                         Path p = fs.getPath(entry);
                         if (p.getParent() != null) Files.createDirectories(p.getParent());
                         Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
         }
@@ -65,7 +69,7 @@ public class PatchbaseInstaller {
 
     public static <T> T readZipInputStreamFor(Path path, String entry, boolean throwIfMissing, Function<InputStream, T> action) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(path))) {
-            var zipEntry = zis.getNextEntry();
+            ZipEntry zipEntry = zis.getNextEntry();
             while (zipEntry != null) {
                 if (zipEntry.isDirectory()) {
                     zipEntry = zis.getNextEntry();
@@ -85,7 +89,7 @@ public class PatchbaseInstaller {
 
     public static void forEachInZip(Path path, BiConsumer<String, InputStream> action) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(path))) {
-            var entry = zis.getNextEntry();
+            ZipEntry entry = zis.getNextEntry();
             while (entry != null) {
                 if (entry.isDirectory()) {
                     entry = zis.getNextEntry();
@@ -98,7 +102,7 @@ public class PatchbaseInstaller {
     }
 
     public static FileSystem openZipFileSystem(Path path) throws IOException {
-        return openZipFileSystem(path, Map.of());
+        return openZipFileSystem(path, Collections.emptyMap());
     }
 
     public static FileSystem openZipFileSystem(Path path, Map<String, Object> args) throws IOException {

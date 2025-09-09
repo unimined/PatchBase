@@ -2,18 +2,18 @@ package xyz.wagyourtail.patchbase.gradle
 
 import org.gradle.api.Project
 import org.gradle.api.tasks.SourceSet
-import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.patchbase.gradle.tasks.ApplySourcePatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateClassPatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateSourcePatchTask
-import xyz.wagyourtail.unimined.api.minecraft.EnvType
 import xyz.wagyourtail.unimined.api.minecraft.MinecraftConfig
 import xyz.wagyourtail.unimined.api.unimined
 import xyz.wagyourtail.unimined.internal.minecraft.MinecraftProvider
 import xyz.wagyourtail.unimined.internal.minecraft.patch.jarmod.JarModAgentMinecraftTransformer
+import xyz.wagyourtail.unimined.mapping.EnvType
 import xyz.wagyourtail.unimined.util.FinalizeOnRead
+import xyz.wagyourtail.unimined.util.capitalized
 import xyz.wagyourtail.unimined.util.withSourceSet
 import kotlin.io.path.nameWithoutExtension
 
@@ -39,7 +39,7 @@ abstract class PatchExtension(val project: Project) {
 
     fun patchBaseCreator(sourceSet: SourceSet, devJar: Boolean = false) {
         val mc = project.unimined.minecrafts[sourceSet]!!
-        if (mc.side == EnvType.COMBINED) {
+        if (mc.side == EnvType.JOINED) {
             project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] Merged may make applying patches more difficult, proceed with caution")
         }
         if (!mc.defaultRemapJar) {
@@ -91,8 +91,7 @@ abstract class PatchExtension(val project: Project) {
             when (mc.side) {
                 EnvType.CLIENT -> it.classpath.set(project.files(mc.minecraftData.minecraftClientFile))
                 EnvType.SERVER -> it.classpath.set(project.files(mc.minecraftData.minecraftServerFile))
-                EnvType.COMBINED -> it.classpath.set(project.files(mc.mergedOfficialMinecraftFile))
-                else -> throw IllegalStateException("Unknown side: ${mc.side}")
+                EnvType.JOINED -> it.classpath.set(project.files(mc.mergedOfficialMinecraftFile))
             }
 
             it.archiveClassifier.set("patch")

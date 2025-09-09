@@ -1,13 +1,23 @@
 import java.net.URI
 
 plugins {
-    kotlin("jvm") version "1.9.23"
+    kotlin("jvm") version "2.1.20"
     `java-gradle-plugin`
     `maven-publish`
 }
 
 version = "${project.properties["version"]}" + if (project.hasProperty("version_snapshot")) "-SNAPSHOT" else ""
 group = "${project.properties["maven_group"]}"
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(8)
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+kotlin {
+    jvmToolchain(8)
+}
 
 base.archivesName = "${project.properties["archives_base_name"]}"
 
@@ -39,7 +49,8 @@ dependencies {
 
     runtimeOnly(gradleApi())
 
-    implementation("xyz.wagyourtail.unimined:unimined:1.3.15")
+    implementation("xyz.wagyourtail.unimined:unimined:1.4.2")
+    implementation("xyz.wagyourtail.unimined.mapping:unimined-mapping-library-jvm:1.2.1")
     installerImplementation("io.github.java-diff-utils:java-diff-utils:4.16")
     installerImplementation("net.neoforged.installertools:binarypatcher:3.0.13")
     installerImplementation("org.ow2.asm:asm:9.8")
@@ -109,9 +120,9 @@ publishing {
     }
     publications {
         create<MavenPublication>("maven") {
-            groupId = project.group as String
-            artifactId = project.properties["archives_base_name"] as String? ?: project.name
-            version = project.version as String
+            groupId = "${project.group}"
+            artifactId = "${project.properties["archives_base_name"]}"
+            version = "${project.version}"
 
             artifact(installerJar.get()) {
                 classifier = "installer"
