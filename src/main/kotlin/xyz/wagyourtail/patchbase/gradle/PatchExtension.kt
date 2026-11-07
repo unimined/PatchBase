@@ -30,6 +30,10 @@ abstract class PatchExtension(val project: Project) {
      *  registered via this extension. */
     var minimizePatch: Boolean = true
 
+    /** Default [CreateClassPatchTask.patchFormat] — `binpatch` or
+     *  `bdiff`. */
+    var patchFormat: String = "binpatch"
+
     /** Register a `createClassPatch<Suffix>` [org.gradle.jvm.tasks.Jar]
      *  task: diffs {@code input} against {@code classpath} and emits a
      *  patch jar — `.binpatch` entries for changed classes plus
@@ -44,6 +48,7 @@ abstract class PatchExtension(val project: Project) {
         it.inputFile.set(input)
         it.classpath.set(project.files(classpath))
         it.minimizePatch.set(minimizePatch)
+        it.patchFormat.set(patchFormat)
         it.archiveClassifier.set("patch")
         it.configure()
     }

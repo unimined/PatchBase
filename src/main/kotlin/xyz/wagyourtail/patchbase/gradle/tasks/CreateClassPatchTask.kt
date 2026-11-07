@@ -1,6 +1,7 @@
 package xyz.wagyourtail.patchbase.gradle.tasks
 
-import net.neoforged.binarypatcher.Patch
+import xyz.wagyourtail.patchbase.installer.BinPatch
+import xyz.wagyourtail.patchbase.installer.ClassDiff
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -20,6 +21,12 @@ abstract class CreateClassPatchTask : Jar() {
     @get:Input
     abstract val minimizePatch: Property<Boolean>
 
+    /** Class-patch entry format — `binpatch` (default, forge/neoforge
+     *  standard record) or `bdiff` (PatchBase's leaner
+     *  checksum+gdiff unit — no names, lighter dependency surface). */
+    @get:Input
+    abstract val patchFormat: Property<String>
+
     @get:InputFile
     abstract val inputFile: RegularFileProperty
 
@@ -37,7 +44,7 @@ abstract class CreateClassPatchTask : Jar() {
                 // find in classpath
                 findClass(name) { original ->
                     if (original != null) {
-                        val target = tempDir.resolve("$name.binpatch")
+                        val target = tempDir.resolve("$name.${patchFormat.get()}")
                         target.parent.createDirectories()
                         target.writeBytes(makePatch(original, stream, name))
                     } else {
@@ -59,8 +66,14 @@ abstract class CreateClassPatchTask : Jar() {
     fun makePatch(a: InputStream, b: InputStream, name: String): ByteArray {
         val ra = ClassWriter(ClassReader(a), ClassReader.SKIP_DEBUG).toByteArray()
         val rb = ClassWriter(ClassReader(b), ClassReader.SKIP_DEBUG).toByteArray()
-        val x = Patch.from(name, "", ra, rb, minimizePatch.get())
-        return x.toBytes()
+        return when (patchFormat.get()) {
+            "bdiff" -> ClassDiff.create(ra, rb)
+            "binpatch" -> BinPatch.create(
+                name.removeSuffix(".class"), ra, rb, minimizePatch.get()
+            ).write()
+            else -> throw IllegalArgumentException(
+                "unknown patchFormat: ${patchFormat.get()} (expected binpatch|bdiff)")
+        }
     }
 
     fun findClass(name: String, action: (InputStream?) -> Unit) {

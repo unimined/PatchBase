@@ -11,6 +11,12 @@ group = "${project.properties["maven_group"]}"
 
 base.archivesName = "${project.properties["archives_base_name"]}"
 
+// patch jars + the installer lib must stay consumable by Java 17
+// consumers (unimined's adapter modules target 17)
+kotlin {
+    jvmToolchain(17)
+}
+
 val main: SourceSet by sourceSets.getting
 val installer: SourceSet by sourceSets.creating
 val installerImplementation: Configuration by configurations.getting
@@ -40,7 +46,6 @@ dependencies {
     runtimeOnly(gradleApi())
 
     installerImplementation("io.github.java-diff-utils:java-diff-utils:4.16")
-    installerImplementation("net.neoforged.installertools:binarypatcher:3.0.13")
     installerImplementation("org.ow2.asm:asm:9.8")
     installerImplementation("org.ow2.asm:asm-tree:9.8")
     installerImplementation("org.jetbrains:annotations:26.0.2-1")
