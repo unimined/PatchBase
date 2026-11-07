@@ -15,12 +15,6 @@ import java.io.InputStream
 import kotlin.io.path.*
 
 abstract class CreateClassPatchTask : Jar() {
-    /**
-     * Shrinks the created `.class` patches by remapping constant pool indices.
-     */
-    @get:Input
-    abstract val minimizePatch: Property<Boolean>
-
     /** Class-patch entry format — `binpatch` (default, forge/neoforge
      *  standard record) or `bdiff` (PatchBase's leaner
      *  checksum+gdiff unit — no names, lighter dependency surface). */
@@ -69,7 +63,7 @@ abstract class CreateClassPatchTask : Jar() {
         return when (patchFormat.get()) {
             "bdiff" -> ClassDiff.create(ra, rb)
             "binpatch" -> BinPatch.create(
-                name.removeSuffix(".class"), ra, rb, minimizePatch.get()
+                name.removeSuffix(".class"), ra, rb
             ).write()
             else -> throw IllegalArgumentException(
                 "unknown patchFormat: ${patchFormat.get()} (expected binpatch|bdiff)")

@@ -41,14 +41,13 @@ public class BinPatch {
     }
 
     /** Build a patch taking class {@code name} from {@code clean} to
-     *  {@code dirty}. {@code minimize} re-serializes dirty against
-     *  clean's constant pool first — the InstallerTools#7 trick. */
-    public static BinPatch create(String name, byte[] clean, byte[] dirty, boolean minimize) throws IOException {
-        if (minimize) {
-            ClassWriter writer = new ClassWriter(new ClassReader(clean), 0);
-            new ClassReader(dirty).accept(writer, 0);
-            dirty = writer.toByteArray();
-        }
+     *  {@code dirty}. {@code dirty} is always re-serialized against
+     *  {@code clean}'s constant pool first — the InstallerTools#7
+     *  minimization trick; unminimized output is never worth it. */
+    public static BinPatch create(String name, byte[] clean, byte[] dirty) throws IOException {
+        ClassWriter writer = new ClassWriter(new ClassReader(clean), 0);
+        new ClassReader(dirty).accept(writer, 0);
+        dirty = writer.toByteArray();
         Delta delta = new Delta();
         return new BinPatch(name, name, true, adler32(clean), delta.compute(clean, dirty));
     }

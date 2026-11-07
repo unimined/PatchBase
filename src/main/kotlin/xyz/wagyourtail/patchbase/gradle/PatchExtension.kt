@@ -26,10 +26,6 @@ abstract class PatchExtension(val project: Project) {
      *  registered via this extension. */
     var trimWhitespace: Boolean = true
 
-    /** Default [CreateClassPatchTask.minimizePatch] for tasks
-     *  registered via this extension. */
-    var minimizePatch: Boolean = true
-
     /** Default [CreateClassPatchTask.patchFormat] — `binpatch` or
      *  `bdiff`. */
     var patchFormat: String = "binpatch"
@@ -47,7 +43,6 @@ abstract class PatchExtension(val project: Project) {
         it.group = "patchbase"
         it.inputFile.set(input)
         it.classpath.set(project.files(classpath))
-        it.minimizePatch.set(minimizePatch)
         it.patchFormat.set(patchFormat)
         it.archiveClassifier.set("patch")
         it.configure()
