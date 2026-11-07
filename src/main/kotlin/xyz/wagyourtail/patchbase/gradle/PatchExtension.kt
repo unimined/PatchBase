@@ -1,121 +1,108 @@
 package xyz.wagyourtail.patchbase.gradle
 
 import org.gradle.api.Project
-import org.gradle.api.tasks.SourceSet
-import org.gradle.configurationcache.extensions.capitalized
-import org.gradle.jvm.tasks.Jar
-import org.jetbrains.annotations.ApiStatus
+import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.Provider
+import xyz.wagyourtail.patchbase.gradle.tasks.ApplyClassPatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.ApplySourcePatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateClassPatchTask
 import xyz.wagyourtail.patchbase.gradle.tasks.CreateSourcePatchTask
-import xyz.wagyourtail.unimined.api.minecraft.EnvType
-import xyz.wagyourtail.unimined.api.minecraft.MinecraftConfig
-import xyz.wagyourtail.unimined.api.unimined
-import xyz.wagyourtail.unimined.internal.minecraft.MinecraftProvider
-import xyz.wagyourtail.unimined.internal.minecraft.patch.jarmod.JarModAgentMinecraftTransformer
-import xyz.wagyourtail.unimined.util.FinalizeOnRead
-import xyz.wagyourtail.unimined.util.withSourceSet
-import kotlin.io.path.nameWithoutExtension
+import java.io.File
 
-@Suppress("UnstableApiUsage")
+/**
+ * Standalone `patchbase` DSL — generic patch-set create/apply task
+ * wiring over arbitrary files/configurations. Unimined-aware env
+ * wiring (patch jars on an environment's MC jar) lives in the
+ * `unimined-adapter-patchbase` plugin instead.
+ */
 abstract class PatchExtension(val project: Project) {
-    /**
-     * The default value for [[CreateSourcePatchTask.diffContextSize]
-     */
-    @set:ApiStatus.Experimental
-    var diffContextSize: Int by FinalizeOnRead(3)
 
-    /**
-     * The default value for [CreateSourcePatchTask.trimWhitespace]
-     */
-    @set:ApiStatus.Experimental
-    var trimWhitespace: Boolean by FinalizeOnRead(true)
+    /** Default [CreateSourcePatchTask.diffContextSize] for tasks
+     *  registered via this extension. */
+    var diffContextSize: Int = 3
 
-    /**
-     * The default value for [CreateClassPatchTask.minimizePatch]
-     */
-    @set:ApiStatus.Experimental
-    var minimizePatch: Boolean by FinalizeOnRead(true)
+    /** Default [CreateSourcePatchTask.trimWhitespace] for tasks
+     *  registered via this extension. */
+    var trimWhitespace: Boolean = true
 
-    fun patchBaseCreator(sourceSet: SourceSet, devJar: Boolean = false) {
-        val mc = project.unimined.minecrafts[sourceSet]!!
-        if (mc.side == EnvType.COMBINED) {
-            project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] Merged may make applying patches more difficult, proceed with caution")
-        }
-        if (!mc.defaultRemapJar) {
-            project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] defaultRemapJar is false, this may cause issues with patching")
-        }
-        if (mc.mcPatcher !is JarModAgentMinecraftTransformer) {
-            project.logger.warn("[PatchBase/Creator ${this.project.path} ${sourceSet}] mcPatcher is not a JarModAgentMinecraftTransformer, this may cause issues with dev runs")
-        }
+    /** Default [CreateClassPatchTask.minimizePatch] for tasks
+     *  registered via this extension. */
+    var minimizePatch: Boolean = true
 
-        val mcp = mc as MinecraftProvider // needed for access to `getMcDevFile()`
-
-        project.tasks.register("createSourcePatch".withSourceSet(sourceSet), CreateSourcePatchTask::class.java) {
-            it.group = "patchbase"
-            it.sourceDir.set(project.file("src/${sourceSet.name}/java"))
-            it.outputDir.set(project.file("patches/${sourceSet.name}"))
-            it.trimWhitespace.set(trimWhitespace)
-            it.diffContextSize.set(diffContextSize)
-            val sourceFile =
-                mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
-            it.sources.set(project.files(sourceFile))
-            if (!sourceFile.exists()) {
-                it.dependsOn("genSources")
-            }
-        }
-
-        project.tasks.register("applySourcePatch".withSourceSet(sourceSet), ApplySourcePatchTask::class.java) {
-            it.group = "patchbase"
-            it.patchDir.set(project.file("patches/${sourceSet.name}"))
-            it.outputDir.set(project.file("src/${sourceSet.name}/java"))
-            it.trimWhitespace.set(trimWhitespace)
-            it.diffContextSize.set(diffContextSize)
-            val sourceFile =
-                mc.minecraftFileDev.resolveSibling(mcp.getMcDevFile().nameWithoutExtension + "-sources.jar")
-            it.sources.set(project.files(sourceFile))
-            if (!sourceFile.exists()) {
-                it.dependsOn("genSources".withSourceSet(sourceSet))
-            }
-        }
-
-        project.tasks.register("createClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
-            it.group = "patchbase"
-            it.inputFile.set(
-                (project.tasks.findByName(
-                    "remap" + "jar".withSourceSet(sourceSet).capitalized()
-                ) as Jar).outputs.files.singleFile
-            )
-            it.minimizePatch.set(minimizePatch)
-
-            when (mc.side) {
-                EnvType.CLIENT -> it.classpath.set(project.files(mc.minecraftData.minecraftClientFile))
-                EnvType.SERVER -> it.classpath.set(project.files(mc.minecraftData.minecraftServerFile))
-                EnvType.COMBINED -> it.classpath.set(project.files(mc.mergedOfficialMinecraftFile))
-                else -> throw IllegalStateException("Unknown side: ${mc.side}")
-            }
-
-            it.archiveClassifier.set("patch")
-            it.dependsOn("remap" + "jar".withSourceSet(sourceSet).capitalized())
-        }
-
-        if (devJar) {
-            project.tasks.register("createDevClassPatch".withSourceSet(sourceSet), CreateClassPatchTask::class.java) {
-                it.group = "patchbase"
-                it.inputFile.set(
-                    (project.tasks.findByName(
-                        "jar".withSourceSet(sourceSet).capitalized()
-                    ) as Jar).outputs.files.singleFile
-                )
-
-                it.classpath.set(project.files(mc.getMcDevFile()))
-                it.archiveClassifier.set("patch-dev")
-                it.dependsOn("jar".withSourceSet(sourceSet).capitalized())
-            }
-        }
+    /** Register a `createClassPatch<Suffix>` [org.gradle.jvm.tasks.Jar]
+     *  task: diffs {@code input} against {@code classpath} and emits a
+     *  patch jar — `.binpatch` entries for changed classes plus
+     *  verbatim copies of new/changed non-class entries. */
+    fun createClassPatch(
+        suffix: String,
+        input: Provider<RegularFile>,
+        classpath: FileCollection,
+        configure: CreateClassPatchTask.() -> Unit = {}
+    ) = project.tasks.register("createClassPatch$suffix", CreateClassPatchTask::class.java) {
+        it.group = "patchbase"
+        it.inputFile.set(input)
+        it.classpath.set(project.files(classpath))
+        it.minimizePatch.set(minimizePatch)
+        it.archiveClassifier.set("patch")
+        it.configure()
     }
 
-    fun patchBase(minecraftConfig: MinecraftConfig) {
-        minecraftConfig.patchBase()
+    /** Register an `applyClassPatch<Suffix>` task: applies patch
+     *  jars to {@code input} producing {@code output} — the forge-
+     *  binpatch-style dev flow: patch sets give you the loader's
+     *  classes on the base jar without its source or a recompile.
+     *  Patches apply in [patchJars] order; `.binpatch` base checksums
+     *  verify each applies to the jar it was built against. */
+    fun applyClassPatch(
+        suffix: String,
+        input: Provider<RegularFile>,
+        patchJars: FileCollection,
+        output: Provider<RegularFile>,
+        configure: ApplyClassPatchTask.() -> Unit = {}
+    ) = project.tasks.register("applyClassPatch$suffix", ApplyClassPatchTask::class.java) {
+        it.group = "patchbase"
+        it.inputFile.set(input)
+        it.patchJars.from(patchJars)
+        it.outputFile.set(output)
+        it.configure()
     }
+
+    /** Register a `createSourcePatch<Suffix>` task: unified diffs of
+     *  {@code sourceDir} against {@code sources} into {@code outputDir}. */
+    fun createSourcePatch(
+        suffix: String,
+        sourceDir: Provider<File>,
+        outputDir: Provider<File>,
+        sources: FileCollection,
+        configure: CreateSourcePatchTask.() -> Unit = {}
+    ) = project.tasks.register("createSourcePatch$suffix", CreateSourcePatchTask::class.java) {
+        it.group = "patchbase"
+        it.sourceDir.set(sourceDir)
+        it.outputDir.set(outputDir)
+        it.sources.set(project.files(sources))
+        it.trimWhitespace.set(trimWhitespace)
+        it.diffContextSize.set(diffContextSize)
+        it.configure()
+    }
+
+    /** Register an `applySourcePatch<Suffix>` task: applies unified
+     *  diffs from {@code patchDir} onto {@code sources}, writing to
+     *  {@code outputDir}. */
+    fun applySourcePatch(
+        suffix: String,
+        patchDir: Provider<File>,
+        outputDir: Provider<File>,
+        sources: FileCollection,
+        configure: ApplySourcePatchTask.() -> Unit = {}
+    ) = project.tasks.register("applySourcePatch$suffix", ApplySourcePatchTask::class.java) {
+        it.group = "patchbase"
+        it.patchDir.set(patchDir)
+        it.outputDir.set(outputDir)
+        it.sources.set(project.files(sources))
+        it.trimWhitespace.set(trimWhitespace)
+        it.diffContextSize.set(diffContextSize)
+        it.configure()
+    }
+
 }

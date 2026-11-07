@@ -39,7 +39,6 @@ dependencies {
 
     runtimeOnly(gradleApi())
 
-    implementation("xyz.wagyourtail.unimined:unimined:1.3.15")
     installerImplementation("io.github.java-diff-utils:java-diff-utils:4.16")
     installerImplementation("net.neoforged.installertools:binarypatcher:3.0.13")
     installerImplementation("org.ow2.asm:asm:9.8")
@@ -53,15 +52,6 @@ gradlePlugin {
         create("xyz.wagyourtail.patchbase") {
             id = "xyz.wagyourtail.patchbase"
             implementationClass = "xyz.wagyourtail.patchbase.gradle.PatchPlugin"
-        }
-    }
-}
-
-gradlePlugin {
-    plugins {
-        create("xyz.wagyourtail.patchbase-creator") {
-            id = "xyz.wagyourtail.patchbase-creator"
-            implementationClass = "xyz.wagyourtail.patchbase.gradle.PatchCreatorPlugin"
         }
     }
 }

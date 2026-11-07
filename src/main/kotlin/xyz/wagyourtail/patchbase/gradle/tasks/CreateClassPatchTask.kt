@@ -10,8 +10,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
-import xyz.wagyourtail.unimined.util.forEachInZip
-import xyz.wagyourtail.unimined.util.readZipInputStreamFor
 import java.io.InputStream
 import kotlin.io.path.*
 

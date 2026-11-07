@@ -6,7 +6,6 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import xyz.wagyourtail.unimined.util.readZipInputStreamFor
 import java.io.InputStream
 import java.nio.file.Path
 import kotlin.io.path.exists
