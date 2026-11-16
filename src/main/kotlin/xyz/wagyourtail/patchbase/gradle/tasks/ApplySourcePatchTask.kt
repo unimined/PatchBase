@@ -18,7 +18,7 @@ abstract class ApplySourcePatchTask : AbstractSourceTask() {
     @TaskAction
     fun run() {
         val output = outputDir.get().toPath()
-        output.deleteRecursively()
+        if (output.exists()) output.deleteRecursively()
 
         val patch = patchDir.get().toPath()
         for (path in patch.walk()) {

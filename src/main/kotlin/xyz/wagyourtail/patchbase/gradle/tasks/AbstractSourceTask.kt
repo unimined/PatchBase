@@ -34,20 +34,21 @@ abstract class AbstractSourceTask : ConventionTask() {
             if (sourcePath.isDirectory()) {
                 val file = sourcePath.resolve(path)
                 if (file.exists()) {
-                    action(file.inputStream())
-                } else {
-                    action(null)
+                    file.inputStream().use { action(it) }
+                    return
                 }
             } else {
                 try {
                     sourcePath.readZipInputStreamFor(path.toString(), true) {
                         action(it)
                     }
+                    return
                 } catch (e: IllegalArgumentException) {
-                    action(null)
+                    // not present in this source — try the next one
                 }
             }
         }
+        action(null)
     }
 
     fun diff(aName: String?, a: String, bName: String?, b: String): String {
@@ -90,7 +91,11 @@ abstract class AbstractSourceTask : ConventionTask() {
     }
 
     fun applyDiff(originalText: String, patchText: String): String {
-        val patch = UnifiedDiffUtils.parseUnifiedDiff(patchText.lines())
+        // `lines()` keeps a trailing "" element on newline-terminated
+        // text; parseUnifiedDiff would absorb it as a phantom context
+        // line, inflating the last hunk and failing verification
+        val patch = UnifiedDiffUtils.parseUnifiedDiff(
+            patchText.lines().dropLastWhile { it.isEmpty() })
         val patchedText = DiffUtils.patch(originalText.lines(), patch)
         val sb = StringBuilder()
         for (s in patchedText) {

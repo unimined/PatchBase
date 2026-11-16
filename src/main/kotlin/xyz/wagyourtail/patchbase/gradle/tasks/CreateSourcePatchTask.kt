@@ -17,7 +17,7 @@ abstract class CreateSourcePatchTask : AbstractSourceTask() {
     @TaskAction
     fun run() {
         val output = outputDir.get().toPath()
-        output.deleteRecursively()
+        if (output.exists()) output.deleteRecursively()
 
         val source = sourceDir.get().toPath()
         for (path in source.walk()) {
